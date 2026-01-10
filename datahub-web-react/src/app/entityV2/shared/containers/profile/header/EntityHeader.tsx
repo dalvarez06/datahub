@@ -34,6 +34,7 @@ export function getCanEditName(
 type Props = {
     headerDropdownItems?: Set<EntityMenuItems>;
     headerActionItems?: Set<EntityActionItem>;
+    headerActionButtons?: React.ReactNode;
     isNameEditable?: boolean;
     isIconEditable?: boolean;
     isColorEditable?: boolean;
@@ -44,6 +45,7 @@ type Props = {
 export const EntityHeader = ({
     headerDropdownItems,
     headerActionItems,
+    headerActionButtons,
     isNameEditable,
     isIconEditable,
     isColorEditable,
@@ -73,6 +75,7 @@ export const EntityHeader = ({
                 isIconEditable={isIconEditable}
                 displayProperties={displayProperties}
                 headerActionItems={headerActionItems}
+                headerActionButtons={headerActionButtons}
                 headerDropdownItems={headerDropdownItems}
                 subHeader={subHeader}
             />

@@ -104,6 +104,7 @@ export type Props = {
     refetch: () => void;
     headerActionItems?: Set<EntityActionItem>;
     headerDropdownItems?: Set<EntityMenuItems>;
+    headerActionButtons?: React.ReactNode;
     subHeader?: EntitySubHeaderSection;
     showEditName?: boolean;
     isColorEditable?: boolean;
@@ -120,6 +121,7 @@ export const DefaultEntityHeader = ({
     refetch,
     headerDropdownItems,
     headerActionItems, // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    headerActionButtons,
     subHeader,
     showEditName,
     isColorEditable,
@@ -219,6 +221,7 @@ export const DefaultEntityHeader = ({
                 </LeftColumn>
                 <RightColumn>
                     <TopButtonsWrapper>
+                        {headerActionButtons && <div style={{ marginRight: 8 }}>{headerActionButtons}</div>}
                         {headerActionItems && (
                             <EntityActions urn={urn} actionItems={headerActionItems} refetchForEntity={refetch} />
                         )}

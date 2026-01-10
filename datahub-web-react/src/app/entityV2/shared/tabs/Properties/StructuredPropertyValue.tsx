@@ -122,6 +122,13 @@ interface Props {
     attribution?: MetadataAttribution | null;
 }
 
+const isUrlValue = (rawValue?: string) => {
+    if (!rawValue) {
+        return false;
+    }
+    return /^https?:\/\//i.test(rawValue);
+};
+
 export default function StructuredPropertyValue({
     value,
     isRichText,
@@ -134,6 +141,8 @@ export default function StructuredPropertyValue({
     attribution,
 }: Props) {
     const entityRegistry = useEntityRegistry();
+    const rawValue = value.value?.toString() || '';
+    const isUrl = !isRichText && !value.entity && isUrlValue(rawValue);
 
     const getEntityLink = (entity: Entity) =>
         entity.type === EntityType.SchemaField
@@ -183,16 +192,26 @@ export default function StructuredPropertyValue({
                             </Container>
                         ) : (
                             <>
-                                {truncateText ? (
-                                    <Typography.Text
-                                        ellipsis={{ tooltip: attribution ? { placement: 'bottom' } : true }}
-                                    >
-                                        {value.value?.toString() || <div style={{ minHeight: 22 }} />}
-                                    </Typography.Text>
+                                {isUrl ? (
+                                    <Typography.Link href={rawValue} target="_blank" rel="noopener noreferrer">
+                                        <StyledHighlight search={filterText} truncateText={truncateText}>
+                                            {rawValue || <div style={{ minHeight: 22 }} />}
+                                        </StyledHighlight>
+                                    </Typography.Link>
                                 ) : (
-                                    <StyledHighlight search={filterText} truncateText={truncateText}>
-                                        {value.value?.toString() || <div style={{ minHeight: 22 }} />}
-                                    </StyledHighlight>
+                                    <>
+                                        {truncateText ? (
+                                            <Typography.Text
+                                                ellipsis={{ tooltip: attribution ? { placement: 'bottom' } : true }}
+                                            >
+                                                {rawValue || <div style={{ minHeight: 22 }} />}
+                                            </Typography.Text>
+                                        ) : (
+                                            <StyledHighlight search={filterText} truncateText={truncateText}>
+                                                {rawValue || <div style={{ minHeight: 22 }} />}
+                                            </StyledHighlight>
+                                        )}
+                                    </>
                                 )}
                             </>
                         )}

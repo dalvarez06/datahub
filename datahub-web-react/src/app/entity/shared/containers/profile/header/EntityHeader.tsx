@@ -87,11 +87,18 @@ export function getCanEditName(
 type Props = {
     headerDropdownItems?: Set<EntityMenuItems>;
     headerActionItems?: Set<EntityActionItem>;
+    headerActionButtons?: React.ReactNode;
     isNameEditable?: boolean;
     subHeader?: EntitySubHeaderSection;
 };
 
-export const EntityHeader = ({ headerDropdownItems, headerActionItems, isNameEditable, subHeader }: Props) => {
+export const EntityHeader = ({
+    headerDropdownItems,
+    headerActionItems,
+    headerActionButtons,
+    isNameEditable,
+    subHeader,
+}: Props) => {
     const { urn, entityType, entityData, loading } = useEntityData();
     const refetch = useRefetch();
     const me = useUserContext();
@@ -155,6 +162,7 @@ export const EntityHeader = ({ headerDropdownItems, headerActionItems, isNameEdi
                                 entityType={entityType}
                             />
                         )}
+                        {headerActionButtons && <div style={{ marginRight: 8 }}>{headerActionButtons}</div>}
                         {headerActionItems && (
                             <EntityActions urn={urn} actionItems={headerActionItems} refetchForEntity={refetch} />
                         )}

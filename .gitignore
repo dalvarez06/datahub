@@ -136,3 +136,5 @@ datahub-integrations-service/
 metadata-ingestion-modules/acryl-cloud
 
 .claude/
+
+.aws/

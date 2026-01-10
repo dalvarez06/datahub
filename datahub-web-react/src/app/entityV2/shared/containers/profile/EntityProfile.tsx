@@ -88,6 +88,7 @@ type Props<T, U> = {
     subHeader?: EntitySubHeaderSection;
     headerDropdownItems?: Set<EntityMenuItems>;
     headerActionItems?: Set<EntityActionItem>;
+    headerActionButtons?: React.ReactNode;
     isNameEditable?: boolean;
     isIconEditable?: boolean;
     isColorEditable?: boolean;
@@ -193,6 +194,7 @@ export const EntityProfile = <T, U>({
     sidebarSections,
     headerDropdownItems,
     headerActionItems,
+    headerActionButtons,
     isNameEditable,
     isColorEditable,
     isIconEditable,
@@ -391,6 +393,7 @@ export const EntityProfile = <T, U>({
                                                 <EntityHeader
                                                     headerDropdownItems={headerDropdownItems}
                                                     headerActionItems={headerActionItems}
+                                                    headerActionButtons={headerActionButtons}
                                                     isNameEditable={isNameEditable}
                                                     isIconEditable={isIconEditable}
                                                     isColorEditable={isColorEditable}

@@ -1,0 +1,23 @@
+---
+networks:
+  default:
+    name: datahub_network_ingestion
+services:
+  datahub-frontend-react:
+    image: acryldata/datahub-frontend-react:v1.4.0rc2-SNAPSHOT
+    ports:
+    - 0.0.0.0:${DATAHUB_MAPPED_FRONTEND_PORT:-9002}:9002
+  datahub-upgrade:
+    environment:
+    - SKIP_CREATE_USAGE_EVENT_INDICES_STEP=true
+  datahub-gms:
+    image: acryldata/datahub-gms:v1.4.0rc2-SNAPSHOT
+    volumes:
+    - /Users/david/pro/datahub/.aws:/home/datahub/.aws:ro
+    environment:
+    - AWS_REGION=${AWS_REGION:-us-west-2}
+    - AWS_PROFILE=${AWS_PROFILE:-default}
+    - AWS_SHARED_CREDENTIALS_FILE=/home/datahub/.aws/credentials
+    - AWS_CONFIG_FILE=/home/datahub/.aws/config
+    - AWS_SDK_LOAD_CONFIG=1
+    - DATAHUB_INGESTION_JOB_ARN_PROPERTY_URN=${DATAHUB_INGESTION_JOB_ARN_PROPERTY_URN:-urn:li:structuredProperty:awsStepFunctionArn}

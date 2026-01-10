@@ -69,8 +69,17 @@ interface Props {
     isFieldColumn?: boolean;
 }
 
+const isUrlValue = (rawValue?: string) => {
+    if (!rawValue) {
+        return false;
+    }
+    return /^https?:\/\//i.test(rawValue);
+};
+
 export default function StructuredPropertyValue({ value, isRichText, filterText, truncateText, isFieldColumn }: Props) {
     const entityRegistry = useEntityRegistry();
+    const rawValue = value.value?.toString() || '';
+    const isUrl = !isRichText && !value.entity && isUrlValue(rawValue);
 
     return (
         <ValueText>
@@ -101,14 +110,24 @@ export default function StructuredPropertyValue({ value, isRichText, filterText,
                         />
                     ) : (
                         <>
-                            {truncateText ? (
-                                <Typography.Text ellipsis={{ tooltip: true }}>
-                                    {value.value?.toString() || <div style={{ minHeight: 22 }} />}
-                                </Typography.Text>
+                            {isUrl ? (
+                                <Typography.Link href={rawValue} target="_blank" rel="noopener noreferrer">
+                                    <StyledHighlight search={filterText} truncateText={truncateText}>
+                                        {rawValue || <div style={{ minHeight: 22 }} />}
+                                    </StyledHighlight>
+                                </Typography.Link>
                             ) : (
-                                <StyledHighlight search={filterText} truncateText={truncateText}>
-                                    {value.value?.toString() || <div style={{ minHeight: 22 }} />}
-                                </StyledHighlight>
+                                <>
+                                    {truncateText ? (
+                                        <Typography.Text ellipsis={{ tooltip: true }}>
+                                            {rawValue || <div style={{ minHeight: 22 }} />}
+                                        </Typography.Text>
+                                    ) : (
+                                        <StyledHighlight search={filterText} truncateText={truncateText}>
+                                            {rawValue || <div style={{ minHeight: 22 }} />}
+                                        </StyledHighlight>
+                                    )}
+                                </>
                             )}
                         </>
                     )}
