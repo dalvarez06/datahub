@@ -4,6 +4,7 @@ import React from 'react';
 import { useHistory, useLocation } from 'react-router';
 
 import { EmbeddedListSearch } from '@app/entity/shared/components/styled/search/EmbeddedListSearch';
+import { EntityActionProps } from '@app/entity/shared/components/styled/search/EntitySearchResults';
 import { navigateToEntitySearchUrl } from '@app/entity/shared/components/styled/search/navigateToEntitySearchUrl';
 import {
     FilterSet,
@@ -46,6 +47,7 @@ type Props = {
     defaultFilters?: Array<FacetFilterInput>;
     searchBarStyle?: any;
     searchBarInputStyle?: any;
+    entityAction?: React.FC<EntityActionProps>;
     skipCache?: boolean;
     useGetSearchResults?: (params: GetSearchResultsParams) => {
         data: SearchResultsInterface | undefined | null;
@@ -75,6 +77,7 @@ export const EmbeddedListSearchSection = ({
     defaultFilters,
     searchBarStyle,
     searchBarInputStyle,
+    entityAction,
     skipCache,
     useGetSearchResults,
     useGetDownloadSearchResults,
@@ -173,6 +176,7 @@ export const EmbeddedListSearchSection = ({
             defaultFilters={defaultFilters}
             searchBarStyle={searchBarStyle}
             searchBarInputStyle={searchBarInputStyle}
+            entityAction={entityAction}
             skipCache={skipCache}
             useGetSearchResults={useGetSearchResults}
             useGetDownloadSearchResults={useGetDownloadSearchResults}

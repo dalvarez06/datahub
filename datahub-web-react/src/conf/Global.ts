@@ -12,6 +12,7 @@ export enum PageRoutes {
     RESET_CREDENTIALS = '/reset',
     SEARCH_RESULTS = '/search/:type?',
     SEARCH = '/search',
+    LINEAGE_TABLE = '/lineage-table',
     BROWSE = '/browse',
     BROWSE_RESULTS = '/browse/:type',
     DATASETS = '/datasets',
