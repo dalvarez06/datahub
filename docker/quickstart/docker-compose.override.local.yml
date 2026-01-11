@@ -1,19 +1,19 @@
 ---
 networks:
   default:
-    name: datahub_network_ingestion
+    name: datahub_network
 services:
-  datahub-frontend-react:
-    image: acryldata/datahub-frontend-react:v1.4.0rc2-SNAPSHOT
+  frontend-quickstart:
+    image: acryldata/datahub-frontend-react:${DATAHUB_VERSION}
     ports:
     - 0.0.0.0:${DATAHUB_MAPPED_FRONTEND_PORT:-9002}:9002
-  datahub-upgrade:
+  system-update-quickstart:
     environment:
     - SKIP_CREATE_USAGE_EVENT_INDICES_STEP=true
-  datahub-gms:
-    image: acryldata/datahub-gms:v1.4.0rc2-SNAPSHOT
+  datahub-gms-quickstart:
+    image: acryldata/datahub-gms:${DATAHUB_VERSION}
     volumes:
-    - /Users/david/pro/datahub/.aws:/home/datahub/.aws:ro
+    - ./.aws:/home/datahub/.aws:ro
     environment:
     - AWS_REGION=${AWS_REGION:-us-west-2}
     - AWS_PROFILE=${AWS_PROFILE:-default}

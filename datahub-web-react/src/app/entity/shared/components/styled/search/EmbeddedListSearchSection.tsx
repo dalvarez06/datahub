@@ -66,6 +66,7 @@ type Props = {
     applyView?: boolean;
     onLineageClick?: () => void;
     isLineageTab?: boolean;
+    disablePagination?: boolean;
 };
 
 export const EmbeddedListSearchSection = ({
@@ -86,6 +87,7 @@ export const EmbeddedListSearchSection = ({
     applyView,
     onLineageClick,
     isLineageTab,
+    disablePagination,
 }: Props) => {
     const history = useHistory();
     const location = useLocation();
@@ -161,7 +163,7 @@ export const EmbeddedListSearchSection = ({
         <EmbeddedListSearch
             entityTypes={embeddedListSearchEntityTypes}
             query={query || ''}
-            page={page}
+            page={disablePagination ? 1 : page}
             unionType={unionType}
             filters={filters}
             onChangeFilters={onChangeFilters}
@@ -185,6 +187,7 @@ export const EmbeddedListSearchSection = ({
             applyView={applyView}
             onLineageClick={onLineageClick}
             isLineageTab={isLineageTab}
+            disablePagination={disablePagination}
         />
     );
 };

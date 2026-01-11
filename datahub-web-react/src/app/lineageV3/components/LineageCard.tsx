@@ -141,6 +141,7 @@ interface Props extends HTMLAttributes<HTMLDivElement> {
 
     // For rendering context path only
     properties?: GenericEntityProperties;
+    hideContextPath?: boolean;
 
     name: string;
     nameExtra?: React.ReactNode;
@@ -168,6 +169,7 @@ function LineageCard(
         type,
         loading,
         properties,
+        hideContextPath = false,
         name,
         nameExtra,
         nameHighlight,
@@ -183,6 +185,10 @@ function LineageCard(
     }: Props,
     ref: React.Ref<HTMLDivElement>,
 ) {
+    const hasMenuActions = !!menuActions?.some(Boolean);
+    const showContextPath = !!properties && !hideContextPath;
+    const showTopRow = showContextPath || hasMenuActions;
+
     return (
         <UnexpandedCardWrapper data-testid={`unexpanded-lineage-card-${urn}`}>
             {loading || !name ? (
@@ -195,13 +201,17 @@ function LineageCard(
                         ))}
                     </PlatformIconsWrapper>
                     <BodyWrapper>
-                        <TopRowWrapper>
-                            {!!properties && <StyledContextPath properties={properties} hideTypeIcons linksDisabled />}
-                            <MenuActionsWrapper>
-                                {/* eslint-disable-next-line react/no-array-index-key */}
-                                {menuActions?.map((action, index) => action && <span key={index}>{action}</span>)}
-                            </MenuActionsWrapper>
-                        </TopRowWrapper>
+                        {showTopRow && (
+                            <TopRowWrapper>
+                                {showContextPath && (
+                                    <StyledContextPath properties={properties} hideTypeIcons linksDisabled />
+                                )}
+                                <MenuActionsWrapper>
+                                    {/* eslint-disable-next-line react/no-array-index-key */}
+                                    {menuActions?.map((action, index) => action && <span key={index}>{action}</span>)}
+                                </MenuActionsWrapper>
+                            </TopRowWrapper>
+                        )}
                         <Title
                             title={name}
                             highlightText={nameHighlight?.text}

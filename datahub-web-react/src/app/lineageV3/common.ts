@@ -266,6 +266,7 @@ export type LineageToggles = 'hideTransformations' | 'showDataProcessInstances' 
 
 export interface NodeContext {
     rootUrn: string;
+    rootUrns?: Urn[];
     rootType: EntityType;
     nodes: Map<Urn, LineageEntity>;
     edges: Map<EdgeId, LineageEdge>;
@@ -288,6 +289,7 @@ export interface NodeContext {
 
 export const LineageNodesContext = React.createContext<NodeContext>({
     rootUrn: '',
+    rootUrns: undefined,
     rootType: EntityType.Dataset,
     nodes: new Map(),
     edges: new Map(),

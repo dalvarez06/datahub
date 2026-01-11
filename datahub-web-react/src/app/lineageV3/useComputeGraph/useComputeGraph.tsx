@@ -28,6 +28,7 @@ export default function useComputeGraph(): ProcessedData {
     const ignoreSchemaFieldStatus = useIgnoreSchemaFieldStatus();
     const {
         rootUrn,
+        rootUrns,
         rootType,
         nodes,
         edges,
@@ -55,6 +56,7 @@ export default function useComputeGraph(): ProcessedData {
         () => {
             const context = {
                 rootType,
+                rootUrns,
                 nodes,
                 edges,
                 adjacencyList,
@@ -85,6 +87,7 @@ export default function useComputeGraph(): ProcessedData {
         }, // eslint-disable-next-line react-hooks/exhaustive-deps
         [
             rootUrn,
+            rootUrns,
             rootType,
             nodes,
             edges,

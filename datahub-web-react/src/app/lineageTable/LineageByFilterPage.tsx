@@ -1,5 +1,5 @@
 import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons';
-import { Button, Drawer, Tooltip, Typography } from 'antd';
+import { Button, Drawer, Empty, Switch, Tooltip, Typography } from 'antd';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useHistory } from 'react-router';
 import styled from 'styled-components';
@@ -9,6 +9,7 @@ import { GetSearchResultsParams } from '@app/entity/shared/components/styled/sea
 import { ImpactAnalysis as ImpactAnalysisV1 } from '@app/entity/shared/tabs/Lineage/ImpactAnalysis';
 import { EmbeddedListSearchSection as EmbeddedListSearchSectionV2 } from '@app/entityV2/shared/components/styled/search/EmbeddedListSearchSection';
 import { ImpactAnalysis as ImpactAnalysisV2 } from '@app/entityV2/shared/tabs/Lineage/ImpactAnalysis';
+import MultiRootLineageGraph from '@app/lineageTable/MultiRootLineageGraph';
 import { useEntityRegistry } from '@app/useEntityRegistry';
 import { useIsThemeV2 } from '@app/useIsThemeV2';
 
@@ -20,9 +21,11 @@ import {
     LineageDirection,
     LineageSummary,
     LineageSummaryDirection,
+    SearchAcrossEntitiesInput,
 } from '@types';
 
 const DEFAULT_SAMPLE_COUNT = 3;
+const GRAPH_VIEW_PAGE_SIZE = 1000;
 const FULL_LINEAGE_FILTERS: Array<FacetFilterInput> = [{ field: 'degree', values: ['1', '2', '3+'] }];
 
 const ActionContainer = styled.div`
@@ -89,6 +92,28 @@ const DrawerSubtitle = styled(Typography.Text)`
     color: #7f7f7f;
 `;
 
+const ViewToggleBar = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0 12px;
+`;
+
+const GraphContainer = styled.div`
+    height: 100vh;
+    min-height: 720px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background: white;
+    overflow: hidden;
+    grid-column: 1 / -1;
+`;
+
+const GraphPaginationSpacer = styled.div`
+    height: 56px;
+    margin-top: 8px;
+`;
+
 type DrawerState = {
     urn: string;
     direction: LineageDirection;
@@ -111,6 +136,10 @@ export const LineageByFilterPage = () => {
     const [currentUrns, setCurrentUrns] = useState<string[]>([]);
     const [entitiesByUrn, setEntitiesByUrn] = useState<Record<string, Entity>>({});
     const [drawerState, setDrawerState] = useState<DrawerState | null>(null);
+    const [showGraph, setShowGraph] = useState(false);
+    const [lastSearchInput, setLastSearchInput] = useState<SearchAcrossEntitiesInput | null>(null);
+    const [graphUrns, setGraphUrns] = useState<string[]>([]);
+    const [graphEntitiesByUrn, setGraphEntitiesByUrn] = useState<Record<string, Entity>>({});
 
     const useGetSearchResults = (params: GetSearchResultsParams) => {
         const { data, loading, error, refetch } = useGetSearchResultsForMultipleQuery(params);
@@ -131,6 +160,7 @@ export const LineageByFilterPage = () => {
                 return acc;
             }, {} as Record<string, Entity>);
             setEntitiesByUrn(nextEntitiesByUrn);
+            setLastSearchInput(params.variables.input);
         }, [data]);
 
         return {
@@ -141,6 +171,37 @@ export const LineageByFilterPage = () => {
                 refetch(refetchParams).then((res) => res.data.searchAcrossEntities),
         };
     };
+
+    const graphSearchInput = useMemo(() => {
+        if (!lastSearchInput) return null;
+        return {
+            ...lastSearchInput,
+            start: 0,
+            count: GRAPH_VIEW_PAGE_SIZE,
+        };
+    }, [lastSearchInput]);
+
+    const { data: graphSearchData, loading: graphSearchLoading } = useGetSearchResultsForMultipleQuery({
+        variables: graphSearchInput ? { input: graphSearchInput } : ({} as { input: SearchAcrossEntitiesInput }),
+        skip: !showGraph || !graphSearchInput,
+    });
+
+    useEffect(() => {
+        if (!showGraph) return;
+        if (!graphSearchData?.searchAcrossEntities) {
+            setGraphUrns([]);
+            setGraphEntitiesByUrn({});
+            return;
+        }
+        const searchResults = graphSearchData.searchAcrossEntities.searchResults || [];
+        const nextUrns = searchResults.map((result) => result.entity.urn);
+        setGraphUrns((prev) => (areArraysEqual(prev, nextUrns) ? prev : nextUrns));
+        const nextEntitiesByUrn = searchResults.reduce((acc, result) => {
+            acc[result.entity.urn] = result.entity;
+            return acc;
+        }, {} as Record<string, Entity>);
+        setGraphEntitiesByUrn(nextEntitiesByUrn);
+    }, [showGraph, graphSearchData]);
 
     const summaryUrns = useMemo(() => Array.from(new Set(currentUrns)), [currentUrns]);
     const { data: lineageSummaryData, loading: lineageSummaryLoading } = useLineageSummaryQuery({
@@ -272,8 +333,27 @@ export const LineageByFilterPage = () => {
         )
     ) : null;
 
+    const graphRoots = useMemo(
+        () => {
+            const sourceUrns = showGraph && graphUrns.length ? graphUrns : summaryUrns;
+            const sourceEntities = showGraph && graphUrns.length ? graphEntitiesByUrn : entitiesByUrn;
+            return sourceUrns
+                .map((urn) => sourceEntities[urn])
+                .filter((entity): entity is Entity => !!entity)
+                .map((entity) => ({ urn: entity.urn, type: entity.type }));
+        },
+        [showGraph, graphUrns, graphEntitiesByUrn, summaryUrns, entitiesByUrn],
+    );
+
     return (
         <>
+            <ViewToggleBar>
+                <Typography.Text strong>Graph view</Typography.Text>
+                <Switch checked={showGraph} onChange={(checked) => setShowGraph(checked)} />
+                <Typography.Text type="secondary">
+                    {graphSearchLoading && showGraph ? 'Loading roots...' : `${graphRoots.length} roots`}
+                </Typography.Text>
+            </ViewToggleBar>
             {isThemeV2 ? (
                 <EmbeddedListSearchSectionV2
                     emptySearchQuery="*"
@@ -282,6 +362,7 @@ export const LineageByFilterPage = () => {
                     applyView
                     useGetSearchResults={useGetSearchResults}
                     entityAction={LineageAction}
+                    disablePagination
                 />
             ) : (
                 <EmbeddedListSearchSectionV1
@@ -291,8 +372,19 @@ export const LineageByFilterPage = () => {
                     applyView
                     useGetSearchResults={useGetSearchResults}
                     entityAction={LineageAction}
+                    disablePagination
                 />
             )}
+            {showGraph && (
+                <GraphContainer>
+                    {graphRoots.length ? (
+                        <MultiRootLineageGraph roots={graphRoots} />
+                    ) : (
+                        <Empty description="No roots found for current filters." />
+                    )}
+                </GraphContainer>
+            )}
+            {showGraph && <GraphPaginationSpacer />}
             <Drawer title={drawerTitle} placement="right" width={720} onClose={closeDrawer} open={!!drawerState}>
                 {drawerContent}
             </Drawer>

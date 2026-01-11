@@ -334,16 +334,17 @@ function NodeContents(props: Props & LineageEntity & DisplayedColumns) {
                 isGhost={isGhost}
                 isSearchedEntity={isSearchedEntity}
             >
-                <LineageCard
-                    urn={urn}
-                    type={type}
-                    loading={!entity}
-                    onMouseEnter={() => setHoveredNode(urn)}
-                    onMouseLeave={() => setHoveredNode(null)}
-                    onDoubleClick={
-                        isGhost ? undefined : () => history.push(getLineageUrl(urn, type, location, entityRegistry))
-                    }
-                    name={entity?.name || urn || ''}
+                    <LineageCard
+                        urn={urn}
+                        type={type}
+                        loading={!entity}
+                        onMouseEnter={() => setHoveredNode(urn)}
+                        onMouseLeave={() => setHoveredNode(null)}
+                        onDoubleClick={
+                            isGhost ? undefined : () => history.push(getLineageUrl(urn, type, location, entityRegistry))
+                        }
+                        hideContextPath={location.pathname.startsWith('/lineage-table')}
+                        name={entity?.name || urn || ''}
                     nameHighlight={{ text: searchQuery, color: highlightColor }}
                     nameExtra={
                         <>

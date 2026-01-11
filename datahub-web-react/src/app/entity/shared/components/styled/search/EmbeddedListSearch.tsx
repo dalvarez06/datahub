@@ -111,6 +111,7 @@ type Props = {
     isLineageTab?: boolean;
     isViewAllMode?: boolean | false;
     handleViewAllClickWarning?: () => void;
+    disablePagination?: boolean;
 };
 
 export const EmbeddedListSearch = ({
@@ -143,6 +144,7 @@ export const EmbeddedListSearch = ({
     isLineageTab = false,
     isViewAllMode = false,
     handleViewAllClickWarning,
+    disablePagination = false,
 }: Props) => {
     const { shouldRefetchEmbeddedListSearch, setShouldRefetchEmbeddedListSearch } = useEntityContext();
     // Adjust query based on props
@@ -158,7 +160,9 @@ export const EmbeddedListSearch = ({
     const [showFilters, setShowFilters] = useState(defaultShowFilters || false);
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedEntities, setSelectedEntities] = useState<EntityAndType[]>([]);
-    const [numResultsPerPage, setNumResultsPerPage] = useState(SearchCfg.RESULTS_PER_PAGE);
+    const [numResultsPerPage, setNumResultsPerPage] = useState(
+        disablePagination ? SearchCfg.RESULTS_PER_PAGE * 100 : SearchCfg.RESULTS_PER_PAGE,
+    );
 
     // This hook is simply used to generate a refetch callback that the DownloadAsCsv component can use to
     // download the correct results given the current context.
@@ -183,7 +187,7 @@ export const EmbeddedListSearch = ({
     let searchInput: SearchAcrossEntitiesInput = {
         types: entityTypes || [],
         query: finalQuery,
-        start: (page - 1) * numResultsPerPage,
+        start: disablePagination ? 0 : (page - 1) * numResultsPerPage,
         count: numResultsPerPage,
         orFilters: finalFilters,
         viewUrn: applyView ? selectedViewUrn : undefined,
@@ -343,7 +347,7 @@ export const EmbeddedListSearch = ({
                 onChangeFilters={onChangeFilters}
                 onChangePage={onChangePage}
                 onChangeUnionType={onChangeUnionType}
-                page={page}
+                page={disablePagination ? 1 : page}
                 showFilters={showFilters}
                 numResultsPerPage={numResultsPerPage}
                 setNumResultsPerPage={setNumResultsPerPage}
@@ -354,6 +358,7 @@ export const EmbeddedListSearch = ({
                 applyView={applyView}
                 isViewAllMode={isViewAllMode}
                 handleViewAllClickWarning={handleViewAllClickWarning}
+                hidePagination={disablePagination}
             />
         </Container>
     );

@@ -73,6 +73,7 @@ type Props = {
     resetShouldRefetch?: () => void;
     applyView?: boolean;
     showFilterBar?: boolean;
+    disablePagination?: boolean;
 };
 
 export const EmbeddedListSearchSection = ({
@@ -93,6 +94,7 @@ export const EmbeddedListSearchSection = ({
     resetShouldRefetch,
     applyView,
     showFilterBar,
+    disablePagination,
 }: Props) => {
     const history = useHistory();
     const location = useLocation();
@@ -169,7 +171,7 @@ export const EmbeddedListSearchSection = ({
         <EmbeddedListSearch
             entityTypes={embeddedListSearchEntityTypes}
             query={query || ''}
-            page={page}
+            page={disablePagination ? 1 : page}
             unionType={unionType}
             filters={filters}
             onChangeFilters={onChangeFilters}
@@ -194,6 +196,7 @@ export const EmbeddedListSearchSection = ({
             applyView={applyView}
             showFilterBar={showFilterBar}
             sort={sortInput?.sortCriterion}
+            disablePagination={disablePagination}
         />
     );
 };

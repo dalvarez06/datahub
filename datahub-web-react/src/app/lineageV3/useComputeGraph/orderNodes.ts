@@ -11,14 +11,15 @@ import { EntityType, LineageDirection } from '@types';
  * @param context Lineage node context.
  */
 export default function orderNodes(
-    urn: string,
+    urn: string | string[],
     direction: LineageDirection,
     { nodes, adjacencyList, rootType }: Pick<NodeContext, 'adjacencyList' | 'nodes' | 'rootType'>,
 ): LineageEntity[] {
     const compareNodes = generateCompareNodesFunction(rootType);
+    const rootUrns = Array.isArray(urn) ? urn : [urn];
     const orderedNodes: string[] = [];
-    const seenNodes = new Set<string>([urn]);
-    const queue = [urn]; // Note: uses array for queue, slow for large graphs
+    const seenNodes = new Set<string>(rootUrns);
+    const queue = [...rootUrns]; // Note: uses array for queue, slow for large graphs
     while (queue.length > 0) {
         const current = queue.shift() as string; // Just checked length
         const children = Array.from(adjacencyList[direction].get(current) || []).sort(compareNodes);

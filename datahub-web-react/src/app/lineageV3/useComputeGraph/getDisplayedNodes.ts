@@ -32,27 +32,24 @@ interface Output {
  *          and a map of nodes to their non-transformational parents.
  */
 export default function getDisplayedNodes(
-    urn: string,
+    urn: string | string[],
     orderedNodes: Record<LineageDirection, LineageEntity[]>,
     context: Pick<NodeContext, 'adjacencyList' | 'nodes' | 'edges' | 'rootType'>,
 ): Output {
     const parents = new Map<string, Set<string>>();
 
     const { nodes, rootType } = context;
-    const rootNode = nodes.get(urn);
-    if (!rootNode) {
-        return { displayedNodes: [], parents };
-    }
+    const rootUrns = Array.isArray(urn) ? urn : [urn];
+    const displayedNodes: LineageNode[] = [];
+    const addedNodes = new Set<string>();
 
-    const displayedNodes: LineageNode[] = [rootNode];
-    const addedNodes = new Set<string>([urn]);
-
-    function traverseTree(direction: LineageDirection) {
+    function traverseTree(rootUrn: string, direction: LineageDirection) {
+        const rootNode = nodes.get(rootUrn);
         if (!rootNode?.isExpanded[direction]) {
             return;
         }
-        const seenNodes = new Set<string>([urn]);
-        const queue = [urn]; // Note: uses array for queue, slow for large graphs
+        const seenNodes = new Set<string>([rootUrn]);
+        const queue = [rootUrn]; // Note: uses array for queue, slow for large graphs
         while (queue.length > 0) {
             const current = queue.shift() as string; // Just checked length
             const filteredChildren = applyFilters(current, direction, orderedNodes[direction], parents, context);
@@ -78,8 +75,18 @@ export default function getDisplayedNodes(
         }
     }
 
-    traverseTree(LineageDirection.Upstream);
-    traverseTree(LineageDirection.Downstream);
+    rootUrns.forEach((rootUrn) => {
+        const rootNode = nodes.get(rootUrn);
+        if (!rootNode) {
+            return;
+        }
+        if (!addedNodes.has(rootUrn)) {
+            addedNodes.add(rootUrn);
+            displayedNodes.push(rootNode);
+        }
+        traverseTree(rootUrn, LineageDirection.Upstream);
+        traverseTree(rootUrn, LineageDirection.Downstream);
+    });
 
     return { displayedNodes, parents };
 }
