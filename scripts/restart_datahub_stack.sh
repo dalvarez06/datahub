@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${DATAHUB_VERSION:=debug}"
+: "${DATAHUB_VERSION:=head}"
 : "${UI_INGESTION_DEFAULT_CLI_VERSION:=1.3.1.4}"
 : "${COMPOSE_PROFILES:=quickstart,quickstart-backend,quickstart-frontend,quickstart-consumers,quickstart-storage}"
 export DATAHUB_VERSION
 export UI_INGESTION_DEFAULT_CLI_VERSION
 export COMPOSE_PROFILES
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 compose_files=(
-  -f docker/quickstart/docker-compose.quickstart-profile.yml
-  -f docker/quickstart/docker-compose.override.local.yml
+  -f "${REPO_ROOT}/docker/quickstart/docker-compose.quickstart-profile.yml"
+  -f "${REPO_ROOT}/docker/quickstart/docker-compose.override.local.yml"
 )
 
 docker compose "${compose_files[@]}" down -v

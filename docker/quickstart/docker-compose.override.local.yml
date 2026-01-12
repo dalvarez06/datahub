@@ -4,14 +4,15 @@ networks:
     name: datahub_network
 services:
   frontend-quickstart:
-    image: acryldata/datahub-frontend-react:${DATAHUB_VERSION}
+    image: acryldata/datahub-frontend-react:debug
     ports:
     - 0.0.0.0:${DATAHUB_MAPPED_FRONTEND_PORT:-9002}:9002
   system-update-quickstart:
+    image: acryldata/datahub-upgrade:head
     environment:
     - SKIP_CREATE_USAGE_EVENT_INDICES_STEP=true
   datahub-gms-quickstart:
-    image: acryldata/datahub-gms:${DATAHUB_VERSION}
+    image: acryldata/datahub-gms:head
     volumes:
     - ./.aws:/home/datahub/.aws:ro
     environment:
@@ -21,3 +22,5 @@ services:
     - AWS_CONFIG_FILE=/home/datahub/.aws/config
     - AWS_SDK_LOAD_CONFIG=1
     - DATAHUB_INGESTION_JOB_ARN_PROPERTY_URN=${DATAHUB_INGESTION_JOB_ARN_PROPERTY_URN:-urn:li:structuredProperty:awsStepFunctionArn}
+  datahub-actions-quickstart:
+    image: acryldata/datahub-actions:head-slim
