@@ -4,7 +4,7 @@ networks:
     name: datahub_network
 services:
   frontend-quickstart:
-    image: acryldata/datahub-frontend-react:debug
+    image: ${DATAHUB_FRONTEND_IMAGE:-acryldata/datahub-frontend-react:debug}
     ports:
     - 0.0.0.0:${DATAHUB_MAPPED_FRONTEND_PORT:-9002}:9002
   system-update-quickstart:
@@ -12,7 +12,7 @@ services:
     environment:
     - SKIP_CREATE_USAGE_EVENT_INDICES_STEP=true
   datahub-gms-quickstart:
-    image: acryldata/datahub-gms:head
+    image: ${DATAHUB_GMS_IMAGE:-acryldata/datahub-gms:debug}
     volumes:
     - ./.aws:/home/datahub/.aws:ro
     environment:

@@ -40,6 +40,7 @@ const StyledReactFlow = styled(ReactFlow)<{ isDraggingBoundingBox: boolean; $edg
         `.react-flow__node-lineage-entity:not(.dragging) {
             transition: transform ${TRANSITION_DURATION_MS}ms ease-in-out;
         }`}
+
 `;
 
 // TODO: Bring back after figuring out how to no overlap expand / contract actions

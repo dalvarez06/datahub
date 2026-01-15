@@ -179,6 +179,12 @@ export function NavLinksMenu(props: Props) {
                         isHidden: false,
                     },
                     {
+                        title: 'Lineage Table',
+                        description: 'Explore lineage across filtered assets',
+                        link: PageRoutes.LINEAGE_TABLE,
+                        isHidden: false,
+                    },
+                    {
                         title: 'Structured Properties',
                         showNewTag: true,
                         description: `Manage custom properties for your data assets`,

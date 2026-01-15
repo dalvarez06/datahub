@@ -6,6 +6,7 @@ import {
     HardDrives,
     Plugs,
     Question,
+    ShareNetwork,
     SignOut,
     SquaresFour,
     Tag,
@@ -283,6 +284,14 @@ export const NavSidebar = () => {
                         selectedIcon: <Globe weight="fill" />,
                         link: PageRoutes.DOMAINS,
                         additionalLinksForPathMatching: [`/${entityRegistry.getPathName(EntityType.Domain)}/:urn`],
+                    },
+                    {
+                        type: NavBarMenuItemTypes.Item,
+                        title: 'Lineage Table',
+                        key: 'lineageTable',
+                        icon: <ShareNetwork />,
+                        selectedIcon: <ShareNetwork weight="fill" />,
+                        link: PageRoutes.LINEAGE_TABLE,
                     },
                     {
                         type: NavBarMenuItemTypes.Item,
