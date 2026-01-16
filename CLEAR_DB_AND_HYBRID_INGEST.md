@@ -30,5 +30,5 @@ DATAHUB_HYBRID_PLATFORM=dbt_athena \
 
 ## Notes
 - The money repo is always at `../money`.
-- Hybrid nodes are separate entities; originals remain intact.
+- Hybrid nodes are separate entities; by default the script hides the original dbt + target nodes.
 - If you want a different hybrid platform name, set `DATAHUB_HYBRID_PLATFORM`.
