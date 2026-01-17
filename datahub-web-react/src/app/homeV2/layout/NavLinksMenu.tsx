@@ -202,6 +202,13 @@ export function NavLinksMenu(props: Props) {
             isHidden: !showIngestion,
         },
         {
+            icon: IngestionMenuIcon,
+            title: 'Ingestion Overview',
+            description: 'Monitor Step Functions executions',
+            link: PageRoutes.INGESTION_OVERVIEW,
+            isHidden: !showIngestion,
+        },
+        {
             icon: SettingsMenuIcon,
             title: 'Settings',
             description: 'Manage your account and preferences',

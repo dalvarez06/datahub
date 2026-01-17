@@ -18,6 +18,7 @@ import GlossaryRoutesV2 from '@app/glossaryV2/GlossaryRoutes';
 import StructuredProperties from '@app/govern/structuredProperties/StructuredProperties';
 import { ManageIngestionPage } from '@app/ingest/ManageIngestionPage';
 import IngestionRoutes from '@app/ingestV2/IngestionRoutes';
+import IngestionOverviewPage from '@app/ingestV2/overview/IngestionOverviewPage';
 import { LineageByFilterPage } from '@app/lineageTable/LineageByFilterPage';
 import { MFERoutes } from '@app/mfeframework/mfeConfigLoader';
 import { SearchPage } from '@app/search/SearchPage';
@@ -118,6 +119,7 @@ export const SearchRoutes = (): JSX.Element => {
                     />
                 )}
 
+                <Route path={PageRoutes.INGESTION_OVERVIEW} render={() => <IngestionOverviewPage />} />
                 {!showIngestV2 && <Route path={PageRoutes.INGESTION} render={() => <ManageIngestionPage />} />}
                 {showIngestV2 && <Route path={PageRoutes.INGESTION} render={() => <IngestionRoutes />} />}
 

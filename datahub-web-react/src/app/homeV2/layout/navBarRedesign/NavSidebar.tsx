@@ -5,6 +5,7 @@ import {
     Globe,
     HardDrives,
     Plugs,
+    Pulse,
     Question,
     ShareNetwork,
     SignOut,
@@ -325,6 +326,15 @@ export const NavSidebar = () => {
                                 });
                             }
                         },
+                    },
+                    {
+                        type: NavBarMenuItemTypes.Item,
+                        title: 'Ingestion Overview',
+                        key: 'ingestionOverview',
+                        isHidden: !showDataSources,
+                        icon: <Pulse />,
+                        selectedIcon: <Pulse weight="fill" />,
+                        link: PageRoutes.INGESTION_OVERVIEW,
                     },
                     {
                         type: NavBarMenuItemTypes.Item,

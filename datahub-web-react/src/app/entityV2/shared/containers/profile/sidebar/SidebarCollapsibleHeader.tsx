@@ -4,6 +4,7 @@ import React, { useContext } from 'react';
 import styled from 'styled-components';
 
 import { useEntityData, useRefetch } from '@app/entity/shared/EntityContext';
+import RunIngestionButton from '@app/entity/dataset/profile/RunIngestionButton';
 import { EntityMenuItems } from '@app/entityV2/shared/EntityDropdown/EntityMenuActions';
 import MoreOptionsMenuAction from '@app/entityV2/shared/EntityDropdown/MoreOptionsMenuAction';
 import { TitleAction } from '@app/entityV2/shared/containers/profile/sidebar/TitleAction';
@@ -76,6 +77,7 @@ export default function SidebarCollapsibleHeader({ currentTab, headerDropdownIte
                     <Top>
                         <TabTitle>{currentTabName}</TabTitle>
                         <RightActions>
+                            {forLineage && <RunIngestionButton compact />}
                             {actionType && <TitleAction actionType={actionType} icon={icon} />}
                             {forLineage && (
                                 <ViewInPlatform hideSiblingActions={separateSiblings} urn={urn} data={entityData} />

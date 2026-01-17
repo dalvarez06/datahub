@@ -17,9 +17,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +31,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import io.datahubproject.metadata.context.OperationContext;
@@ -43,6 +48,12 @@ import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 import software.amazon.awssdk.services.lambda.model.InvocationType;
 import software.amazon.awssdk.services.sfn.SfnClient;
 import software.amazon.awssdk.services.sfn.SfnClientBuilder;
+import software.amazon.awssdk.services.sfn.model.ExecutionListItem;
+import software.amazon.awssdk.services.sfn.model.ListExecutionsRequest;
+import software.amazon.awssdk.services.sfn.model.ListExecutionsResponse;
+import software.amazon.awssdk.services.sfn.model.ListStateMachinesRequest;
+import software.amazon.awssdk.services.sfn.model.ListStateMachinesResponse;
+import software.amazon.awssdk.services.sfn.model.StateMachineListItem;
 import software.amazon.awssdk.services.sfn.model.StartExecutionRequest;
 import software.amazon.awssdk.services.sfn.model.StartExecutionResponse;
 import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
@@ -59,6 +70,11 @@ public class IngestionLambdaController {
   private static final String REGION_ENV = "DATAHUB_INGESTION_LAMBDA_REGION";
   private static final String AWS_REGION_ENV = "AWS_REGION";
   private static final String AWS_DEFAULT_REGION_ENV = "AWS_DEFAULT_REGION";
+  private static final int DEFAULT_EXECUTION_LIMIT = 15;
+  private static final int MAX_EXECUTION_LIMIT = 50;
+  private static final long STEP_FUNCTIONS_CACHE_TTL_MS = 60_000L;
+  private static final AtomicReference<CachedStepFunctionsResponse> STEP_FUNCTIONS_CACHE =
+      new AtomicReference<>();
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -158,6 +174,54 @@ public class IngestionLambdaController {
         response.statusCode());
 
     return ResponseEntity.ok(IngestionRunResponse.started(runId));
+  }
+
+  @GetMapping(value = "/step-functions", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<StepFunctionsOverviewResponse> listStepFunctions(
+      @RequestParam(value = "limit", required = false) Integer limit,
+      @RequestParam(value = "refresh", required = false) Boolean refresh) {
+    int executionLimit = normalizeExecutionLimit(limit);
+    boolean bypassCache = Boolean.TRUE.equals(refresh);
+    long now = System.currentTimeMillis();
+
+    CachedStepFunctionsResponse cached = STEP_FUNCTIONS_CACHE.get();
+    if (!bypassCache
+        && cached != null
+        && cached.getExecutionLimit() == executionLimit
+        && now - cached.getGeneratedAt() < STEP_FUNCTIONS_CACHE_TTL_MS) {
+      return ResponseEntity.ok(cached.getResponse());
+    }
+
+    StepFunctionsOverviewResponse response = new StepFunctionsOverviewResponse();
+    response.setExecutionLimit(executionLimit);
+    response.setGeneratedAt(now);
+    response.setRegion(resolveRegionName());
+    response.setStateMachines(Collections.emptyList());
+
+    List<StateMachineOverview> results = new ArrayList<>();
+    try (SfnClient sfnClient = buildSfnClient()) {
+      String nextToken = null;
+      do {
+        ListStateMachinesResponse listResponse =
+            sfnClient.listStateMachines(
+                ListStateMachinesRequest.builder().maxResults(1000).nextToken(nextToken).build());
+        for (StateMachineListItem item : listResponse.stateMachines()) {
+          results.add(loadStateMachineOverview(sfnClient, item, executionLimit));
+        }
+        nextToken = listResponse.nextToken();
+      } while (nextToken != null);
+    } catch (Exception e) {
+      log.warn("Failed to load Step Functions overview", e);
+      response.setError("Failed to load Step Functions overview");
+      response.setStateMachines(Collections.emptyList());
+      response.setTotalStateMachines(0);
+      return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(response);
+    }
+
+    response.setStateMachines(results);
+    response.setTotalStateMachines(results.size());
+    STEP_FUNCTIONS_CACHE.set(new CachedStepFunctionsResponse(now, executionLimit, response));
+    return ResponseEntity.ok(response);
   }
 
   private ResponseEntity<IngestionRunResponse> startStepFunction(
@@ -304,13 +368,7 @@ public class IngestionLambdaController {
   }
 
   private LambdaClient buildLambdaClient() {
-    String regionName = System.getenv(REGION_ENV);
-    if (StringUtils.isBlank(regionName)) {
-      regionName = System.getenv(AWS_REGION_ENV);
-    }
-    if (StringUtils.isBlank(regionName)) {
-      regionName = System.getenv(AWS_DEFAULT_REGION_ENV);
-    }
+    String regionName = resolveRegionName();
 
     LambdaClientBuilder builder = LambdaClient.builder();
     if (StringUtils.isNotBlank(regionName)) {
@@ -320,6 +378,16 @@ public class IngestionLambdaController {
   }
 
   private SfnClient buildSfnClient() {
+    String regionName = resolveRegionName();
+
+    SfnClientBuilder builder = SfnClient.builder();
+    if (StringUtils.isNotBlank(regionName)) {
+      builder.region(Region.of(regionName));
+    }
+    return builder.build();
+  }
+
+  private String resolveRegionName() {
     String regionName = System.getenv(REGION_ENV);
     if (StringUtils.isBlank(regionName)) {
       regionName = System.getenv(AWS_REGION_ENV);
@@ -327,12 +395,67 @@ public class IngestionLambdaController {
     if (StringUtils.isBlank(regionName)) {
       regionName = System.getenv(AWS_DEFAULT_REGION_ENV);
     }
+    return regionName;
+  }
 
-    SfnClientBuilder builder = SfnClient.builder();
-    if (StringUtils.isNotBlank(regionName)) {
-      builder.region(Region.of(regionName));
+  private int normalizeExecutionLimit(Integer limit) {
+    if (limit == null) {
+      return DEFAULT_EXECUTION_LIMIT;
     }
-    return builder.build();
+    if (limit < 1) {
+      return 1;
+    }
+    if (limit > MAX_EXECUTION_LIMIT) {
+      return MAX_EXECUTION_LIMIT;
+    }
+    return limit;
+  }
+
+  private StateMachineOverview loadStateMachineOverview(
+      SfnClient sfnClient, StateMachineListItem item, int executionLimit) {
+    StateMachineOverview overview = new StateMachineOverview();
+    overview.setArn(item.stateMachineArn());
+    overview.setName(item.name());
+    overview.setStatus(null);
+    overview.setType(item.type() != null ? item.type().toString() : null);
+    overview.setCreatedAt(item.creationDate() != null ? item.creationDate().toEpochMilli() : null);
+    overview.setExecutions(Collections.emptyList());
+
+    try {
+      ListExecutionsResponse executionsResponse =
+          sfnClient.listExecutions(
+              ListExecutionsRequest.builder()
+                  .stateMachineArn(item.stateMachineArn())
+                  .maxResults(executionLimit)
+                  .build());
+      List<ExecutionOverview> executions = new ArrayList<>();
+      for (ExecutionListItem execution : executionsResponse.executions()) {
+        executions.add(mapExecution(execution));
+      }
+      overview.setExecutions(executions);
+    } catch (Exception e) {
+      log.warn("Failed to load executions for {}", item.stateMachineArn(), e);
+      overview.setError("Failed to load executions");
+      overview.setExecutions(Collections.emptyList());
+    }
+    return overview;
+  }
+
+  private ExecutionOverview mapExecution(ExecutionListItem execution) {
+    ExecutionOverview overview = new ExecutionOverview();
+    overview.setArn(execution.executionArn());
+    overview.setName(execution.name());
+    overview.setStatus(execution.status() != null ? execution.status().toString() : null);
+    if (execution.startDate() != null) {
+      overview.setStartTime(execution.startDate().toEpochMilli());
+    }
+    if (execution.stopDate() != null) {
+      overview.setStopTime(execution.stopDate().toEpochMilli());
+      if (overview.getStartTime() != null) {
+        overview.setDurationMs(overview.getStopTime() - overview.getStartTime());
+      }
+    }
+    return overview;
   }
 
   private String resolveActorUrn() {
@@ -373,5 +496,43 @@ public class IngestionLambdaController {
       response.setMessage(message);
       return response;
     }
+  }
+
+  @Data
+  private static class CachedStepFunctionsResponse {
+    private final long generatedAt;
+    private final int executionLimit;
+    private final StepFunctionsOverviewResponse response;
+  }
+
+  @Data
+  public static class StepFunctionsOverviewResponse {
+    private String region;
+    private long generatedAt;
+    private int executionLimit;
+    private int totalStateMachines;
+    private String error;
+    private List<StateMachineOverview> stateMachines;
+  }
+
+  @Data
+  public static class StateMachineOverview {
+    private String arn;
+    private String name;
+    private String status;
+    private String type;
+    private Long createdAt;
+    private String error;
+    private List<ExecutionOverview> executions;
+  }
+
+  @Data
+  public static class ExecutionOverview {
+    private String arn;
+    private String name;
+    private String status;
+    private Long startTime;
+    private Long stopTime;
+    private Long durationMs;
   }
 }

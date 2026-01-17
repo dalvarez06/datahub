@@ -14,7 +14,7 @@ services:
   datahub-gms-quickstart:
     image: ${DATAHUB_GMS_IMAGE:-acryldata/datahub-gms:debug}
     volumes:
-    - ./.aws:/home/datahub/.aws:ro
+    - ../../.aws:/home/datahub/.aws:ro
     environment:
     - AWS_REGION=${AWS_REGION:-us-west-2}
     - AWS_PROFILE=${AWS_PROFILE:-default}
