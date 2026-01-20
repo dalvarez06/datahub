@@ -5,7 +5,9 @@ import {
     Globe,
     HardDrives,
     Plugs,
+    Pulse,
     Question,
+    ShareNetwork,
     SignOut,
     SquaresFour,
     Tag,
@@ -286,6 +288,14 @@ export const NavSidebar = () => {
                     },
                     {
                         type: NavBarMenuItemTypes.Item,
+                        title: 'Lineage Table',
+                        key: 'lineageTable',
+                        icon: <ShareNetwork />,
+                        selectedIcon: <ShareNetwork weight="fill" />,
+                        link: PageRoutes.LINEAGE_TABLE,
+                    },
+                    {
+                        type: NavBarMenuItemTypes.Item,
                         title: 'Structured Properties',
                         key: 'structuredProperties',
                         isHidden: !showStructuredProperties,
@@ -316,6 +326,15 @@ export const NavSidebar = () => {
                                 });
                             }
                         },
+                    },
+                    {
+                        type: NavBarMenuItemTypes.Item,
+                        title: 'Ingestion Overview',
+                        key: 'ingestionOverview',
+                        isHidden: !showDataSources,
+                        icon: <Pulse />,
+                        selectedIcon: <Pulse weight="fill" />,
+                        link: PageRoutes.INGESTION_OVERVIEW,
                     },
                     {
                         type: NavBarMenuItemTypes.Item,

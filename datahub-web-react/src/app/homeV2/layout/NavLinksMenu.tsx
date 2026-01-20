@@ -179,6 +179,12 @@ export function NavLinksMenu(props: Props) {
                         isHidden: false,
                     },
                     {
+                        title: 'Lineage Table',
+                        description: 'Explore lineage across filtered assets',
+                        link: PageRoutes.LINEAGE_TABLE,
+                        isHidden: false,
+                    },
+                    {
                         title: 'Structured Properties',
                         showNewTag: true,
                         description: `Manage custom properties for your data assets`,
@@ -193,6 +199,13 @@ export function NavLinksMenu(props: Props) {
             title: 'Ingestion',
             description: 'Manage data integrations and pipelines',
             link: PageRoutes.INGESTION,
+            isHidden: !showIngestion,
+        },
+        {
+            icon: IngestionMenuIcon,
+            title: 'Ingestion Overview',
+            description: 'Monitor Step Functions executions',
+            link: PageRoutes.INGESTION_OVERVIEW,
             isHidden: !showIngestion,
         },
         {

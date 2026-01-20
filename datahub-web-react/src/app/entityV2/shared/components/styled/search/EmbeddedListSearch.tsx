@@ -133,6 +133,7 @@ type Props = {
     showFilterBar?: boolean;
     sort?: SortCriterion;
     searchFlags?: SearchFlags;
+    disablePagination?: boolean;
 };
 
 export const EmbeddedListSearch = ({
@@ -166,6 +167,7 @@ export const EmbeddedListSearch = ({
     showFilterBar = true,
     sort,
     searchFlags,
+    disablePagination = false,
 }: Props) => {
     const userContext = useUserContext();
 
@@ -188,7 +190,9 @@ export const EmbeddedListSearch = ({
     const [showFilters, setShowFilters] = useState(defaultShowFilters || false);
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedEntities, setSelectedEntities] = useState<EntityAndType[]>([]);
-    const [numResultsPerPage, setNumResultsPerPage] = useState(SearchCfg.RESULTS_PER_PAGE);
+    const [numResultsPerPage, setNumResultsPerPage] = useState(
+        disablePagination ? SearchCfg.RESULTS_PER_PAGE * 100 : SearchCfg.RESULTS_PER_PAGE,
+    );
     const [defaultViewUrn, setDefaultViewUrn] = useState<string | undefined>();
     const [selectedViewUrn, setSelectedViewUrn] = useState<string | undefined>();
 
@@ -219,7 +223,7 @@ export const EmbeddedListSearch = ({
     const searchInput: SearchAcrossEntitiesInput = {
         types: entityTypes || [],
         query: finalQuery,
-        start: (page - 1) * numResultsPerPage,
+        start: disablePagination ? 0 : (page - 1) * numResultsPerPage,
         count: numResultsPerPage,
         orFilters: finalFilters,
         viewUrn: applyView ? selectedViewUrn : undefined,
@@ -416,7 +420,7 @@ export const EmbeddedListSearch = ({
                 onChangeFilters={onChangeFilters}
                 onChangePage={onChangePage}
                 onChangeUnionType={onChangeUnionType}
-                page={page}
+                page={disablePagination ? 1 : page}
                 showFilters={showFilters}
                 numResultsPerPage={numResultsPerPage}
                 setNumResultsPerPage={setNumResultsPerPage}
@@ -433,6 +437,7 @@ export const EmbeddedListSearch = ({
                 view={view}
                 compactUserSearchCardStyle
                 errorMessage={errorMessage}
+                hidePagination={disablePagination}
             />
         </Container>
     );

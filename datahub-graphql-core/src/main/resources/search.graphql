@@ -22,6 +22,13 @@ extend type Query {
   ): SearchAcrossLineageResults
 
   """
+  Get a 1-hop lineage summary for a list of entities
+  """
+  lineageSummary(
+    input: LineageSummaryInput!
+  ): LineageSummaryResult
+
+  """
   Search across the results of a graph query on a node, uses scroll API
   """
   scrollAcrossLineage(
@@ -442,6 +449,65 @@ input SearchAcrossLineageInput {
   Optional - Information on how to sort this search result
   """
   sortInput: SearchSortInput
+}
+
+"""
+Input arguments for a 1-hop lineage summary query
+"""
+input LineageSummaryInput {
+  """
+  Urns to summarize
+  """
+  urns: [String!]!
+
+  """
+  Number of relationships to return per direction
+  """
+  sampleCount: Int
+
+  """
+  Whether to separate sibling entities
+  """
+  separateSiblings: Boolean
+
+  """
+  Whether to include soft-deleted entities in results
+  """
+  includeGhostEntities: Boolean
+
+  """
+  Optional - filter edges by start time
+  """
+  startTimeMillis: Long
+
+  """
+  Optional - filter edges by end time
+  """
+  endTimeMillis: Long
+}
+
+"""
+Results for a lineage summary query
+"""
+type LineageSummaryResult {
+  results: [LineageSummary!]!
+}
+
+"""
+Lineage summary for a single entity
+"""
+type LineageSummary {
+  urn: String!
+  upstream: LineageSummaryDirection!
+  downstream: LineageSummaryDirection!
+}
+
+"""
+1-hop lineage summary for a direction
+"""
+type LineageSummaryDirection {
+  total: Int!
+  relationships: [LineageRelationship!]!
 }
 
 """

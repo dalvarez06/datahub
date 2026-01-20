@@ -126,6 +126,7 @@ interface Props {
     isLineageTab?: boolean;
     isViewAllMode?: boolean | false;
     handleViewAllClickWarning?: () => void;
+    hidePagination?: boolean;
 }
 
 const getPlatformUrnFromSearchResponse = (searchResponse: SearchResultType | null | undefined) => {
@@ -157,6 +158,7 @@ export const EmbeddedListSearchResults = ({
     isLineageTab = false,
     isViewAllMode = false,
     handleViewAllClickWarning,
+    hidePagination = false,
 }: Props) => {
     const history = useHistory();
     const showSeparateSiblings = useIsShowSeparateSiblingsEnabled();
@@ -271,25 +273,27 @@ export const EmbeddedListSearchResults = ({
                     )}
                 </ResultContainer>
             </SearchBody>
-            <PaginationInfoContainer>
-                <PaginationInfo>
-                    <b>
-                        {lastResultIndex > 0 ? (page - 1) * pageSize + 1 : 0} - {lastResultIndex}
-                    </b>{' '}
-                    of <b>{totalResults}</b>
-                </PaginationInfo>
-                <StyledPagination
-                    current={page}
-                    pageSize={numResultsPerPage}
-                    total={totalResults}
-                    showLessItems
-                    onChange={onChangePage}
-                    showSizeChanger={totalResults > SearchCfg.RESULTS_PER_PAGE}
-                    onShowSizeChange={(_currNum, newNum) => setNumResultsPerPage(newNum)}
-                    pageSizeOptions={['10', '20', '30']}
-                />
-                {applyView ? <MatchingViewsLabel /> : <span />}
-            </PaginationInfoContainer>
+            {!hidePagination && (
+                <PaginationInfoContainer>
+                    <PaginationInfo>
+                        <b>
+                            {lastResultIndex > 0 ? (page - 1) * pageSize + 1 : 0} - {lastResultIndex}
+                        </b>{' '}
+                        of <b>{totalResults}</b>
+                    </PaginationInfo>
+                    <StyledPagination
+                        current={page}
+                        pageSize={numResultsPerPage}
+                        total={totalResults}
+                        showLessItems
+                        onChange={onChangePage}
+                        showSizeChanger={totalResults > SearchCfg.RESULTS_PER_PAGE}
+                        onShowSizeChange={(_currNum, newNum) => setNumResultsPerPage(newNum)}
+                        pageSizeOptions={['10', '20', '30']}
+                    />
+                    {applyView ? <MatchingViewsLabel /> : <span />}
+                </PaginationInfoContainer>
+            )}
         </>
     );
 };

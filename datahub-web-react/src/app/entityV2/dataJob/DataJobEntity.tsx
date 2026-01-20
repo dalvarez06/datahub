@@ -7,6 +7,7 @@ import { Entity, EntityCapabilityType, IconStyleType, PreviewType } from '@app/e
 import { DataFlowEntity } from '@app/entityV2/dataFlow/DataFlowEntity';
 import { Preview } from '@app/entityV2/dataJob/preview/Preview';
 import { RunsTab } from '@app/entityV2/dataJob/tabs/RunsTab';
+import RunIngestionButton from '@app/entity/dataset/profile/RunIngestionButton';
 import { EntityMenuItems } from '@app/entityV2/shared/EntityDropdown/EntityMenuActions';
 import { TYPE_ICON_CLASS_NAME } from '@app/entityV2/shared/components/subtypes';
 import { EntityProfile } from '@app/entityV2/shared/containers/profile/EntityProfile';
@@ -103,6 +104,7 @@ export class DataJobEntity implements Entity<DataJob> {
             useUpdateQuery={useUpdateDataJobMutation}
             getOverrideProperties={this.getOverridePropertiesFromEntity}
             headerDropdownItems={headerDropdownItems}
+            headerActionButtons={<RunIngestionButton />}
             tabs={[
                 {
                     name: 'Documentation',

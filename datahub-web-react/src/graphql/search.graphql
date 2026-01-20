@@ -1556,6 +1556,30 @@ query searchAcrossLineageCount($input: SearchAcrossLineageInput!) {
     }
 }
 
+query lineageSummary($input: LineageSummaryInput!) {
+    lineageSummary(input: $input) {
+        results {
+            urn
+            upstream {
+                total
+                relationships {
+                    entity {
+                        ...entityDisplayNameFields
+                    }
+                }
+            }
+            downstream {
+                total
+                relationships {
+                    entity {
+                        ...entityDisplayNameFields
+                    }
+                }
+            }
+        }
+    }
+}
+
 query searchAcrossLineageStructure($input: SearchAcrossLineageInput!) {
     searchAcrossLineage(input: $input) {
         start

@@ -134,6 +134,7 @@ import com.linkedin.datahub.graphql.resolvers.ingest.source.ListIngestionSources
 import com.linkedin.datahub.graphql.resolvers.ingest.source.UpsertIngestionSourceResolver;
 import com.linkedin.datahub.graphql.resolvers.jobs.DataJobRunsResolver;
 import com.linkedin.datahub.graphql.resolvers.jobs.EntityRunsResolver;
+import com.linkedin.datahub.graphql.resolvers.lineage.LineageSummaryResolver;
 import com.linkedin.datahub.graphql.resolvers.lineage.UpdateLineageResolver;
 import com.linkedin.datahub.graphql.resolvers.load.AspectResolver;
 import com.linkedin.datahub.graphql.resolvers.load.BatchGetEntitiesResolver;
@@ -1034,6 +1035,12 @@ public class GmsGraphQLEngine {
                     "searchAcrossLineage",
                     new SearchAcrossLineageResolver(
                         this.entityClient, this.entityRegistry, this.viewService))
+                .dataFetcher(
+                    "lineageSummary",
+                    new LineageSummaryResolver(
+                        this.siblingGraphService,
+                        this.restrictedService,
+                        this.authorizationConfiguration))
                 .dataFetcher(
                     "scrollAcrossLineage", new ScrollAcrossLineageResolver(this.entityClient))
                 .dataFetcher(

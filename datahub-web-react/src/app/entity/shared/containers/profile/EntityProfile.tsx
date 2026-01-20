@@ -74,6 +74,7 @@ type Props<T, U> = {
     subHeader?: EntitySubHeaderSection;
     headerDropdownItems?: Set<EntityMenuItems>;
     headerActionItems?: Set<EntityActionItem>;
+    headerActionButtons?: React.ReactNode;
     hideBrowseBar?: boolean;
     isNameEditable?: boolean;
 };
@@ -155,6 +156,7 @@ export const EntityProfile = <T, U>({
     sidebarSections,
     headerDropdownItems,
     headerActionItems,
+    headerActionButtons,
     isNameEditable,
     hideBrowseBar,
     subHeader,
@@ -287,6 +289,7 @@ export const EntityProfile = <T, U>({
                                 <EntityHeader
                                     headerDropdownItems={headerDropdownItems}
                                     headerActionItems={headerActionItems}
+                                    headerActionButtons={headerActionButtons}
                                     subHeader={subHeader}
                                 />
                                 <Divider style={{ marginBottom: '0' }} />
@@ -347,6 +350,7 @@ export const EntityProfile = <T, U>({
                                             <EntityHeader
                                                 headerDropdownItems={headerDropdownItems}
                                                 headerActionItems={headerActionItems}
+                                                headerActionButtons={headerActionButtons}
                                                 isNameEditable={isNameEditable}
                                                 subHeader={subHeader}
                                             />

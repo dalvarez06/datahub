@@ -291,6 +291,11 @@ class DBTCommonConfig(
         default=None,
         description="The platform instance for the platform that dbt is operating on. Use this if you have multiple instances of the same platform (e.g. redshift) and need to distinguish between them.",
     )
+    emit_target_platform_nodes: bool = Field(
+        default=True,
+        description="When enabled, emits dataset entities and lineage for the target platform "
+        "(e.g. Athena/Snowflake). Disable to emit only dbt entities and keep lineage within dbt.",
+    )
     use_identifiers: bool = Field(
         default=False,
         description="Use model identifier instead of model name if defined (if not, default to model name).",
@@ -642,6 +647,7 @@ class DBTNode:
         target_platform_instance: Optional[str],
         env: str,
         skip_sources_in_lineage: bool,
+        force_dbt_urn_for_lineage: bool = False,
     ) -> str:
         """
         Get the urn to use when referencing this node in a dbt node's upstream lineage.
@@ -652,6 +658,13 @@ class DBTNode:
         point there.
         """
         # TODO: This logic shouldn't live in the DBTNode class. It should be moved to the source.
+
+        if force_dbt_urn_for_lineage:
+            return self.get_urn(
+                target_platform=DBT_PLATFORM,
+                env=env,
+                data_platform_instance=dbt_platform_instance,
+            )
 
         platform_value = DBT_PLATFORM
         platform_instance_value = dbt_platform_instance
@@ -749,6 +762,7 @@ def get_upstreams(
     environment: str,
     platform_instance: Optional[str],
     skip_sources_in_lineage: bool,
+    force_dbt_urn_for_lineage: bool = False,
 ) -> List[str]:
     upstream_urns = []
 
@@ -769,6 +783,7 @@ def get_upstreams(
                 target_platform_instance=target_platform_instance,
                 env=environment,
                 skip_sources_in_lineage=skip_sources_in_lineage,
+                force_dbt_urn_for_lineage=force_dbt_urn_for_lineage,
             )
         )
     return upstream_urns
@@ -1039,8 +1054,13 @@ class DBTSourceBase(StatefulIngestionSourceBase):
             all_nodes_map,
         )
 
-        logger.info(f"Updating {self.config.target_platform} metadata")
-        yield from self.create_target_platform_mces(non_test_nodes)
+        if self.config.emit_target_platform_nodes:
+            logger.info(f"Updating {self.config.target_platform} metadata")
+            yield from self.create_target_platform_mces(non_test_nodes)
+        else:
+            logger.info(
+                "Skipping target platform metadata emission because emit_target_platform_nodes is disabled"
+            )
 
         yield from self.create_test_entity_mcps(
             test_nodes,
@@ -2063,6 +2083,8 @@ class DBTSourceBase(StatefulIngestionSourceBase):
         # if a node is of type source in dbt, its upstream lineage should have the corresponding table/view
         # from the platform. This code block is executed when we are generating entities of type "dbt".
         if node.node_type == "source":
+            if not self.config.emit_target_platform_nodes:
+                return None
             return make_mapping_upstream_lineage(
                 upstream_urn=node.get_urn(
                     self.config.target_platform,
@@ -2083,6 +2105,7 @@ class DBTSourceBase(StatefulIngestionSourceBase):
                 self.config.env,
                 self.config.platform_instance,
                 skip_sources_in_lineage=self.config.skip_sources_in_lineage,
+                force_dbt_urn_for_lineage=not self.config.emit_target_platform_nodes,
             )
 
             def _translate_dbt_name_to_upstream_urn(dbt_name: str) -> str:
@@ -2092,6 +2115,7 @@ class DBTSourceBase(StatefulIngestionSourceBase):
                     target_platform_instance=self.config.target_platform_instance,
                     env=self.config.env,
                     skip_sources_in_lineage=self.config.skip_sources_in_lineage,
+                    force_dbt_urn_for_lineage=not self.config.emit_target_platform_nodes,
                 )
 
             if node.cll_debug_info and node.cll_debug_info.error:
@@ -2269,6 +2293,8 @@ class DBTSourceBase(StatefulIngestionSourceBase):
         Returns:
             True if sibling patches should be emitted for this node
         """
+        if not self.config.emit_target_platform_nodes:
+            return False
         # Only create siblings for entities that exist in target platform
         if not node.exists_in_target_platform:
             return False

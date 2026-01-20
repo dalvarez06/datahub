@@ -28,12 +28,14 @@ type ContextSubset = Pick<NodeContext, 'nodes' | 'edges' | 'adjacencyList'>;
  * Hide nodes from the graph, connecting edges through the removed nodes.
  */
 export default function hideNodes(
-    rootUrn: string,
+    rootUrn: string | string[],
     rootType: EntityType,
     { hideTransformations, hideDataProcessInstances, hideGhostEntities, ignoreSchemaFieldStatus }: HideNodesConfig,
     { nodes, edges, adjacencyList }: ContextSubset,
     filter?: (node: LineageEntity) => boolean,
 ): ContextSubset {
+    const rootUrns = Array.isArray(rootUrn) ? rootUrn : [rootUrn];
+    const rootSet = new Set(rootUrns);
     let newNodes = nodes;
     let newEdges = edges;
     let newAdjacencyList = adjacencyList;
@@ -49,7 +51,7 @@ export default function hideNodes(
     if (hideGhostEntities) {
         newNodes = new Map(
             Array.from(newNodes).filter(
-                ([urn, node]) => urn === rootUrn || !isGhostEntity(node.entity, ignoreSchemaFieldStatus),
+                ([urn, node]) => rootSet.has(urn) || !isGhostEntity(node.entity, ignoreSchemaFieldStatus),
             ),
         );
         ({ newEdges, newAdjacencyList } = pruneEdges({
@@ -60,9 +62,9 @@ export default function hideNodes(
     }
     if (hideTransformations) {
         newNodes = new Map(
-            Array.from(newNodes).filter(([urn, node]) => urn === rootUrn || !isTransformational(node, rootType)),
+            Array.from(newNodes).filter(([urn, node]) => rootSet.has(urn) || !isTransformational(node, rootType)),
         );
-        ({ newEdges, newAdjacencyList } = connectEdges(rootUrn, {
+        ({ newEdges, newAdjacencyList } = connectEdges(rootUrns, {
             nodes: newNodes,
             edges: newEdges,
             adjacencyList: newAdjacencyList,
@@ -73,10 +75,10 @@ export default function hideNodes(
         // Currently data process instances can't have lineage to queries so this is fine
         newNodes = new Map(
             Array.from(newNodes).filter(
-                ([urn, node]) => urn === rootUrn || node.type !== EntityType.DataProcessInstance,
+                ([urn, node]) => rootSet.has(urn) || node.type !== EntityType.DataProcessInstance,
             ),
         );
-        ({ newEdges, newAdjacencyList } = connectEdges(rootUrn, {
+        ({ newEdges, newAdjacencyList } = connectEdges(rootUrns, {
             nodes: newNodes,
             edges: newEdges,
             adjacencyList: newAdjacencyList,
@@ -119,7 +121,7 @@ function pruneEdges({ nodes, edges }: ContextSubset) {
 /**
  * Return new adjacency list and edge map, connecting edges through the removed nodes.
  */
-function connectEdges(rootUrn: string, { nodes, edges, adjacencyList }: ContextSubset) {
+function connectEdges(rootUrns: string[], { nodes, edges, adjacencyList }: ContextSubset) {
     const seen = new Set<string>();
     const intermediateAdjacencyList: NodeContext['adjacencyList'] = {
         [LineageDirection.Upstream]: new Map(),
@@ -164,9 +166,9 @@ function connectEdges(rootUrn: string, { nodes, edges, adjacencyList }: ContextS
         return intermediateAdjacencyList[direction].get(id);
     }
 
-    buildIntermediateAdjacencyList(rootUrn, LineageDirection.Upstream);
+    rootUrns.forEach((root) => buildIntermediateAdjacencyList(root, LineageDirection.Upstream));
     seen.clear();
-    buildIntermediateAdjacencyList(rootUrn, LineageDirection.Downstream);
+    rootUrns.forEach((root) => buildIntermediateAdjacencyList(root, LineageDirection.Downstream));
 
     const newAdjacencyList: NodeContext['adjacencyList'] = {
         [LineageDirection.Upstream]: new Map(),

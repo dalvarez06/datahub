@@ -33,7 +33,7 @@ import { EntityType, LineageDirection } from '@types';
 export default function computeImpactAnalysisGraph(
     urn: string,
     type: EntityType,
-    context: Pick<NodeContext, GraphStoreFields | LineageToggles | 'rootType'>,
+    context: Pick<NodeContext, GraphStoreFields | LineageToggles | 'rootType' | 'rootUrns'>,
     ignoreSchemaFieldStatus: boolean,
     prevHideTransformations?: boolean,
     offsets: Map<LineageDirection, [number, number]> = new Map(),
@@ -42,14 +42,15 @@ export default function computeImpactAnalysisGraph(
 ) {
     const { nodes, edges, adjacencyList, rootType, hideTransformations, showDataProcessInstances, showGhostEntities } =
         context;
+    const rootUrns = context.rootUrns && context.rootUrns.length ? context.rootUrns : [urn];
     const graphStore: Pick<NodeContext, GraphStoreFields | 'rootType'> = { nodes, edges, adjacencyList, rootType };
     console.debug(graphStore);
 
     // Computed before nodes are hidden by `hideNodes`, to keep node order consistent.
     // Includes nodes that will be hidden, but they'll be filtered out by `getDisplayedNodes`.
     const orderedNodes = {
-        [LineageDirection.Upstream]: orderNodes(urn, LineageDirection.Upstream, graphStore),
-        [LineageDirection.Downstream]: orderNodes(urn, LineageDirection.Downstream, graphStore),
+        [LineageDirection.Upstream]: orderNodes(rootUrns, LineageDirection.Upstream, graphStore),
+        [LineageDirection.Downstream]: orderNodes(rootUrns, LineageDirection.Downstream, graphStore),
     };
 
     const config: HideNodesConfig = {
@@ -58,10 +59,11 @@ export default function computeImpactAnalysisGraph(
         hideGhostEntities: !showGhostEntities,
         ignoreSchemaFieldStatus,
     };
-    const newGraphStore = { ...hideNodes(urn, rootType, config, graphStore, nodeFilter), rootType };
+    const newGraphStore = { ...hideNodes(rootUrns, rootType, config, graphStore, nodeFilter), rootType };
     console.debug(newGraphStore);
 
-    const { displayedNodes, parents } = getDisplayedNodes(urn, orderedNodes, newGraphStore);
+    const { displayedNodes, parents } = getDisplayedNodes(rootUrns, orderedNodes, newGraphStore);
+    const rootNodes = rootUrns.map((root) => nodes.get(root)).filter((node): node is LineageEntity => !!node);
     const rootNode = nodes.get(urn);
 
     let limitedNodes = displayedNodes;
@@ -82,7 +84,7 @@ export default function computeImpactAnalysisGraph(
         levelsMap = result.levelsMap;
     }
 
-    const nodeBuilder = new NodeBuilder(urn, type, rootNode ? [rootNode] : [], limitedNodes, parents);
+    const nodeBuilder = new NodeBuilder(urn, type, rootNodes, limitedNodes, parents);
 
     const orderIndices = {
         [urn]: 0,

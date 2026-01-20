@@ -63,7 +63,7 @@ buildscript {
   ext.googleJavaFormatVersion = '1.18.1'
   ext.openLineageVersion = '1.33.0'
   ext.logbackClassicJava8 = '1.2.12'
-  ext.awsSdk2Version = '2.30.33'
+  ext.awsSdk2Version = '2.32.25'
   ext.micrometerVersion = '1.15.1'
 
   ext.docker_registry = project.getProperties().getOrDefault("dockerRegistry", 'acryldata')
@@ -128,7 +128,7 @@ project.ext.externalDependency = [
     'avroCompiler': 'org.apache.avro:avro-compiler:1.11.4',
     'awsGlueSchemaRegistrySerde': 'software.amazon.glue:schema-registry-serde:1.1.25',
     'awsMskIamAuth': 'software.amazon.msk:aws-msk-iam-auth:2.3.2',
-    'awsSdk2Bom': 'software.amazon.awssdk:bom:2.30.33',
+    'awsSdk2Bom': 'software.amazon.awssdk:bom:2.32.25',
     'awsS3': "software.amazon.awssdk:s3:$awsSdk2Version",
     'awsSecretsManagerJdbc': 'com.amazonaws.secretsmanager:aws-secretsmanager-jdbc:1.0.15',
     'awsPostgresIamAuth': 'software.amazon.jdbc:aws-advanced-jdbc-wrapper:2.6.5',

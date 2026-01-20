@@ -4,6 +4,7 @@ import React from 'react';
 import { useHistory, useLocation } from 'react-router';
 
 import { EmbeddedListSearch } from '@app/entityV2/shared/components/styled/search/EmbeddedListSearch';
+import { EntityActionProps } from '@app/entityV2/shared/components/styled/search/EntitySearchResults';
 import { navigateToEntitySearchUrl } from '@app/entityV2/shared/components/styled/search/navigateToEntitySearchUrl';
 import {
     FilterSet,
@@ -49,6 +50,7 @@ type Props = {
     defaultFilters?: Array<FacetFilterInput>;
     searchBarStyle?: any;
     searchBarInputStyle?: any;
+    entityAction?: React.FC<EntityActionProps>;
     skipCache?: boolean;
     useGetSearchResults?: (params: GetSearchResultsParams) => {
         data: SearchResultsInterface | undefined | null;
@@ -71,6 +73,7 @@ type Props = {
     resetShouldRefetch?: () => void;
     applyView?: boolean;
     showFilterBar?: boolean;
+    disablePagination?: boolean;
 };
 
 export const EmbeddedListSearchSection = ({
@@ -82,6 +85,7 @@ export const EmbeddedListSearchSection = ({
     defaultFilters,
     searchBarStyle,
     searchBarInputStyle,
+    entityAction,
     skipCache,
     useGetSearchResults,
     useGetDownloadSearchResults,
@@ -90,6 +94,7 @@ export const EmbeddedListSearchSection = ({
     resetShouldRefetch,
     applyView,
     showFilterBar,
+    disablePagination,
 }: Props) => {
     const history = useHistory();
     const location = useLocation();
@@ -166,7 +171,7 @@ export const EmbeddedListSearchSection = ({
         <EmbeddedListSearch
             entityTypes={embeddedListSearchEntityTypes}
             query={query || ''}
-            page={page}
+            page={disablePagination ? 1 : page}
             unionType={unionType}
             filters={filters}
             onChangeFilters={onChangeFilters}
@@ -181,6 +186,7 @@ export const EmbeddedListSearchSection = ({
             defaultFilters={defaultFilters}
             searchBarStyle={searchBarStyle}
             searchBarInputStyle={searchBarInputStyle}
+            entityAction={entityAction}
             skipCache={skipCache}
             useGetSearchResults={useGetSearchResults}
             useGetDownloadSearchResults={useGetDownloadSearchResults}
@@ -190,6 +196,7 @@ export const EmbeddedListSearchSection = ({
             applyView={applyView}
             showFilterBar={showFilterBar}
             sort={sortInput?.sortCriterion}
+            disablePagination={disablePagination}
         />
     );
 };

@@ -4,7 +4,7 @@ import { EmbeddedListSearchSection } from '@app/entity/shared/components/styled/
 import generateUseDownloadScrollAcrossLineageSearchResultsHook from '@app/entity/shared/tabs/Lineage/generateUseDownloadScrollAcrossLineageSearchResultsHook';
 import generateUseSearchResultsViaRelationshipHook from '@app/entity/shared/tabs/Lineage/generateUseSearchResultsViaRelationshipHook';
 
-import { LineageDirection } from '@types';
+import { FacetFilterInput, LineageDirection } from '@types';
 
 type Props = {
     urn: string;
@@ -17,6 +17,7 @@ type Props = {
     resetShouldRefetch?: () => void;
     onLineageClick?: () => void;
     isLineageTab?: boolean;
+    defaultFilters?: Array<FacetFilterInput>;
 };
 
 export const ImpactAnalysis = ({
@@ -30,6 +31,7 @@ export const ImpactAnalysis = ({
     resetShouldRefetch,
     onLineageClick,
     isLineageTab,
+    defaultFilters,
 }: Props) => {
     const finalStartTimeMillis = startTimeMillis || undefined;
     const finalEndTimeMillis = endTimeMillis || undefined;
@@ -52,7 +54,7 @@ export const ImpactAnalysis = ({
                 setSkipCache,
             })}
             defaultShowFilters
-            defaultFilters={[{ field: 'degree', values: ['1'] }]}
+            defaultFilters={defaultFilters || [{ field: 'degree', values: ['1'] }]}
             shouldRefetch={shouldRefetch}
             resetShouldRefetch={resetShouldRefetch}
             onLineageClick={onLineageClick}

@@ -106,6 +106,8 @@ export default class NodeBuilder {
 
     roots: Set<string>;
 
+    rootOrder: Map<string, number>;
+
     isHomeTransformational: boolean;
 
     parents: Map<string, Set<string>>;
@@ -150,6 +152,7 @@ export default class NodeBuilder {
         this.homeUrn = rootUrn;
         this.homeType = rootType;
         this.roots = new Set(roots.map((node) => node.urn));
+        this.rootOrder = new Map(roots.map((node, index) => [node.urn, index]));
         this.parents = parents;
         this.isHorizontal = isHorizontal;
         this.nodeHeight = rootType === EntityType.DataFlow ? LINEAGE_NODE_WIDTH : LINEAGE_NODE_HEIGHT;
@@ -449,7 +452,8 @@ export default class NodeBuilder {
             nodes.forEach((id) => {
                 let nodeY: number;
                 if (layer === defaultLayer) {
-                    nodeY = 0;
+                    const rootIndex = this.rootOrder.get(id);
+                    nodeY = rootIndex !== undefined ? rootIndex * nodeHeight : 0;
                 } else {
                     const relatives: string[] = Array.from(this.nodeInformation[id].positionalParents || []);
                     if (mini) {

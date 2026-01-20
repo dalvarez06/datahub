@@ -182,6 +182,7 @@ interface Props {
     view?: DataHubView;
     errorMessage?: string;
     selectLimit?: number;
+    hidePagination?: boolean;
 }
 
 export const EmbeddedListSearchResults = ({
@@ -211,6 +212,7 @@ export const EmbeddedListSearchResults = ({
     view,
     errorMessage,
     selectLimit,
+    hidePagination = false,
 }: Props) => {
     const showSeparateSiblings = useIsShowSeparateSiblingsEnabled();
     const combinedSiblingSearchResults = combineSiblingsInSearchResults(
@@ -288,35 +290,37 @@ export const EmbeddedListSearchResults = ({
                         />
                     )}
                 </ResultContainer>
-                <PaginationInfoContainer>
-                    <PaginationRow>
-                        <PaginationInfo>
-                            <b>
-                                {lastResultIndex > 0 ? (page - 1) * pageSize + 1 : 0} - {lastResultIndex}
-                            </b>{' '}
-                            of <b>{totalResults}</b>
-                        </PaginationInfo>
-                        <StyledPagination
-                            current={page}
-                            pageSize={numResultsPerPage}
-                            total={totalResults}
-                            showLessItems
-                            onChange={onChangePage}
-                            showSizeChanger={totalResults > SearchCfg.RESULTS_PER_PAGE}
-                            onShowSizeChange={(_currNum, newNum) => setNumResultsPerPage(newNum)}
-                            pageSizeOptions={['10', '20', '30']}
-                        />
-                    </PaginationRow>
-                    {applyView && view && selectedViewUrn === view.urn && (
-                        <ViewMessageRow>
-                            <MatchingViewsLabel
-                                view={view}
-                                selectedViewUrn={selectedViewUrn}
-                                setSelectedViewUrn={setSelectedViewUrn}
+                {!hidePagination && (
+                    <PaginationInfoContainer>
+                        <PaginationRow>
+                            <PaginationInfo>
+                                <b>
+                                    {lastResultIndex > 0 ? (page - 1) * pageSize + 1 : 0} - {lastResultIndex}
+                                </b>{' '}
+                                of <b>{totalResults}</b>
+                            </PaginationInfo>
+                            <StyledPagination
+                                current={page}
+                                pageSize={numResultsPerPage}
+                                total={totalResults}
+                                showLessItems
+                                onChange={onChangePage}
+                                showSizeChanger={totalResults > SearchCfg.RESULTS_PER_PAGE}
+                                onShowSizeChange={(_currNum, newNum) => setNumResultsPerPage(newNum)}
+                                pageSizeOptions={['10', '20', '30']}
                             />
-                        </ViewMessageRow>
-                    )}
-                </PaginationInfoContainer>
+                        </PaginationRow>
+                        {applyView && view && selectedViewUrn === view.urn && (
+                            <ViewMessageRow>
+                                <MatchingViewsLabel
+                                    view={view}
+                                    selectedViewUrn={selectedViewUrn}
+                                    setSelectedViewUrn={setSelectedViewUrn}
+                                />
+                            </ViewMessageRow>
+                        )}
+                    </PaginationInfoContainer>
+                )}
             </SearchBody>
         </>
     );
