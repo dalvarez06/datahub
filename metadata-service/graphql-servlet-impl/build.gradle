@@ -30,6 +30,8 @@ dependencies {
   implementation "software.amazon.awssdk:lambda:2.32.25"
   implementation "software.amazon.awssdk:regions:2.32.25"
   implementation "software.amazon.awssdk:sfn:2.32.25"
+  implementation "software.amazon.awssdk:cloudwatchlogs:2.32.25"
+  implementation "software.amazon.awssdk:ecs:2.32.25"
 }
 
 configurations.all{

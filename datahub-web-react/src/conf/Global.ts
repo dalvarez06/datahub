@@ -23,6 +23,7 @@ export enum PageRoutes {
     IDENTITIES = '/identities',
     INGESTION = '/ingestion',
     INGESTION_OVERVIEW = '/ingestion/overview',
+    INGESTION_OVERVIEW_DETAIL = '/ingestion/overview/detail',
     INGESTION_CREATE = '/ingestion/create',
     INGESTION_UPDATE = '/ingestion/update/:urn',
     INGESTION_RUN_DETAILS = '/ingestion/run-details/:urn',

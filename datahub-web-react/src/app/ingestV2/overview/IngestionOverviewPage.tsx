@@ -1,15 +1,19 @@
+import { PlayCircleOutlined } from '@ant-design/icons';
 import { Button, PageTitle, Tooltip } from '@components';
-import { Alert, Empty, Input, Select, Table, Tag, Typography } from 'antd';
+import { Alert, Empty, Input, Select, Table, Tag, Typography, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { formatDateTime } from '@app/ingestV2/shared/components/columns/DateTimeColumn';
 import { formatDuration, toRelativeTimeString } from '@app/shared/time/timeUtils';
 import { useShowNavBarRedesign } from '@app/useShowNavBarRedesign';
+import { PageRoutes } from '@conf/Global';
 import { resolveRuntimePath } from '@utils/runtimeBasePath';
 
-import { ExecutionOverview, StateMachineOverview, StepFunctionsOverviewResponse } from './types';
+import { WorkflowExecutionOverview, WorkflowOverview, WorkflowOverviewResponse } from './types';
+import { DEFAULT_WORKFLOW_PROVIDER } from './workflowProviders';
 
 const PageContainer = styled.div<{ $isShowNavBarRedesign?: boolean }>`
     padding-top: 20px;
@@ -133,14 +137,14 @@ const getStatusColor = (status?: string | null) => {
 const isFailureStatus = (status?: string | null) =>
     status === 'FAILED' || status === 'TIMED_OUT' || status === 'ABORTED';
 
-const getLatestExecution = (executions: ExecutionOverview[]) => executions?.[0];
+const getLatestExecution = (executions: WorkflowExecutionOverview[]) => executions?.[0];
 
-const getFailureCount = (executions: ExecutionOverview[]) =>
+const getFailureCount = (executions: WorkflowExecutionOverview[]) =>
     executions?.filter((execution) => isFailureStatus(execution.status)).length || 0;
 
-type StateMachineRow = StateMachineOverview & {
+type WorkflowRow = WorkflowOverview & {
     key: string;
-    latest?: ExecutionOverview;
+    latest?: WorkflowExecutionOverview;
     failureCount: number;
 };
 
@@ -148,9 +152,34 @@ export default function IngestionOverviewPage() {
     const isShowNavBarRedesign = useShowNavBarRedesign();
     const [limit, setLimit] = useState(DEFAULT_LIMIT);
     const [query, setQuery] = useState('');
-    const [data, setData] = useState<StepFunctionsOverviewResponse | null>(null);
+    const [data, setData] = useState<WorkflowOverviewResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const runWorkflow = useCallback(async (workflowId: string, provider?: string | null) => {
+        if (!workflowId) {
+            message.error('Missing workflow id');
+            return;
+        }
+        try {
+            const response = await fetch(resolveRuntimePath('/api/ingestion/workflows/run'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider: provider || DEFAULT_WORKFLOW_PROVIDER,
+                    workflowId,
+                }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok || payload?.status === 'failed') {
+                message.error(payload?.message || payload?.error || `Run failed (${response.status})`);
+                return;
+            }
+            message.success(`Ingestion started (${payload?.runId || 'ok'})`);
+        } catch (e: any) {
+            message.error(e?.message || 'Failed to start ingestion');
+        }
+    }, []);
 
     const fetchOverview = useCallback(
         async (forceRefresh?: boolean) => {
@@ -158,14 +187,15 @@ export default function IngestionOverviewPage() {
             setError(null);
             try {
                 const params = new URLSearchParams();
+                params.set('provider', DEFAULT_WORKFLOW_PROVIDER);
                 params.set('limit', String(limit));
                 if (forceRefresh) {
                     params.set('refresh', 'true');
                 }
                 const response = await fetch(
-                    resolveRuntimePath(`/api/ingestion/step-functions?${params.toString()}`),
+                    resolveRuntimePath(`/api/ingestion/workflows?${params.toString()}`),
                 );
-                const payload = (await response.json()) as StepFunctionsOverviewResponse;
+                const payload = (await response.json()) as WorkflowOverviewResponse;
                 if (!response.ok) {
                     throw new Error(payload?.error || `Request failed (${response.status})`);
                 }
@@ -174,7 +204,7 @@ export default function IngestionOverviewPage() {
                 }
                 setData(payload);
             } catch (e: any) {
-                setError(e?.message || 'Failed to load Step Functions overview');
+                setError(e?.message || 'Failed to load workflow overview');
                 setData(null);
             } finally {
                 setLoading(false);
@@ -190,18 +220,18 @@ export default function IngestionOverviewPage() {
     }, [fetchOverview]);
 
     const filteredStateMachines = useMemo(() => {
-        const stateMachines = data?.stateMachines || [];
-        if (!query) return stateMachines;
+        const workflows = data?.workflows || [];
+        if (!query) return workflows;
         const lowered = query.toLowerCase();
-        return stateMachines.filter((machine) => machine.name.toLowerCase().includes(lowered));
+        return workflows.filter((machine) => machine.name.toLowerCase().includes(lowered));
     }, [data, query]);
 
-    const rows = useMemo<StateMachineRow[]>(() => {
+    const rows = useMemo<WorkflowRow[]>(() => {
         return filteredStateMachines
             .map((machine) => {
                 const executions = machine.executions || [];
                 return {
-                    key: machine.arn,
+                    key: machine.id,
                     ...machine,
                     latest: getLatestExecution(executions),
                     failureCount: getFailureCount(executions),
@@ -220,14 +250,22 @@ export default function IngestionOverviewPage() {
         }, 0);
     }, [filteredStateMachines]);
 
-    const columns: ColumnsType<StateMachineRow> = [
+    const columns: ColumnsType<WorkflowRow> = [
         {
-            title: 'State machine',
+            title: 'Workflow',
             dataIndex: 'name',
             key: 'name',
-            render: (_: string, record: StateMachineOverview) => (
+            render: (_: string, record: WorkflowOverview) => (
                 <div>
-                    <Typography.Text strong>{record.name}</Typography.Text>
+                    <Typography.Text strong>
+                        <Link
+                            to={`${PageRoutes.INGESTION_OVERVIEW_DETAIL}?provider=${
+                                record.provider || DEFAULT_WORKFLOW_PROVIDER
+                            }&workflowId=${encodeURIComponent(record.id)}`}
+                        >
+                            {record.name}
+                        </Link>
+                    </Typography.Text>
                     <div>
                         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                             {record.type || 'Unknown'} · {record.status || 'Unknown'}
@@ -240,7 +278,7 @@ export default function IngestionOverviewPage() {
             title: 'Latest status',
             dataIndex: 'latest',
             key: 'latest',
-            render: (_: ExecutionOverview | undefined, record: StateMachineRow) => {
+            render: (_: WorkflowExecutionOverview | undefined, record: WorkflowRow) => {
                 const status = record.latest?.status || 'NO RUNS';
                 return <Tag color={getStatusColor(status)}>{status}</Tag>;
             },
@@ -249,7 +287,7 @@ export default function IngestionOverviewPage() {
             title: 'Last run',
             dataIndex: 'latest',
             key: 'lastRun',
-            render: (_: ExecutionOverview | undefined, record: StateMachineRow) => {
+            render: (_: WorkflowExecutionOverview | undefined, record: WorkflowRow) => {
                 const lastStart = record.latest?.startTime;
                 if (!lastStart) return '-';
                 const relativeTime = toRelativeTimeString(lastStart) || '-';
@@ -273,7 +311,7 @@ export default function IngestionOverviewPage() {
             title: 'Recent runs',
             dataIndex: 'executions',
             key: 'recent',
-            render: (executions: ExecutionOverview[]) => (
+            render: (executions: WorkflowExecutionOverview[]) => (
                 <StatusDots>
                     {(executions || []).map((execution) => (
                         <Tooltip
@@ -288,15 +326,37 @@ export default function IngestionOverviewPage() {
                 </StatusDots>
             ),
         },
+        {
+            title: 'Actions',
+            key: 'actions',
+            render: (_: unknown, record: WorkflowRow) => (
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <Button
+                        size="sm"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            runWorkflow(record.id, record.provider);
+                        }}
+                        icon={<PlayCircleOutlined />}
+                    >
+                        Run
+                    </Button>
+                    <Link
+                        to={`${PageRoutes.INGESTION_OVERVIEW_DETAIL}?provider=${
+                            record.provider || DEFAULT_WORKFLOW_PROVIDER
+                        }&workflowId=${encodeURIComponent(record.id)}`}
+                    >
+                        Details
+                    </Link>
+                </div>
+            ),
+        },
     ];
 
     return (
         <PageContainer $isShowNavBarRedesign={isShowNavBarRedesign}>
             <PageHeaderContainer>
-                <PageTitle
-                    title="Ingestion Overview"
-                    subTitle="Monitor recent Step Functions executions across ingestion jobs"
-                />
+                <PageTitle title="Ingestion Overview" subTitle="Monitor workflow executions across ingestion jobs" />
                 <ControlsRow>
                     <Input
                         placeholder="Filter by name"
@@ -322,8 +382,8 @@ export default function IngestionOverviewPage() {
             <PageContentContainer>
                 <SummaryRow>
                     <SummaryItem>
-                        <SummaryLabel>Total state machines</SummaryLabel>
-                        <SummaryValue>{data?.totalStateMachines ?? 0}</SummaryValue>
+                        <SummaryLabel>Total workflows</SummaryLabel>
+                        <SummaryValue>{data?.totalWorkflows ?? 0}</SummaryValue>
                     </SummaryItem>
                     <SummaryItem>
                         <SummaryLabel>Failures in view</SummaryLabel>
@@ -343,20 +403,20 @@ export default function IngestionOverviewPage() {
                     </SummaryItem>
                 </SummaryRow>
                 {error && <Alert type="error" message={error} showIcon />}
-                {!loading && rows.length === 0 && <Empty description="No Step Functions found" />}
+                {!loading && rows.length === 0 && <Empty description="No workflows found" />}
                 <Table
                     dataSource={rows}
                     columns={columns}
                     loading={loading}
                     pagination={false}
                     expandable={{
-                        expandedRowRender: (record: StateMachineRow) => {
+                        expandedRowRender: (record: WorkflowRow) => {
                             if (!record.executions?.length) {
                                 return <Typography.Text type="secondary">No executions found.</Typography.Text>;
                             }
                             return (
                                 <ExecutionList>
-                                    {record.executions.map((execution: ExecutionOverview) => {
+                                    {record.executions.map((execution: WorkflowExecutionOverview) => {
                                         const start = execution.startTime;
                                         const duration =
                                             execution.durationMs != null
